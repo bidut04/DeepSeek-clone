@@ -26,7 +26,7 @@ export default function Home() {
           messege.length===0?(
             <>
             <div className="flex items-center gap-3">
-              <Image src={assets.logo_icon} className="h-16"/>
+              <Image src={assets.logo_icon} className="h-16" alt=""/>
               <p className="text-2xl font-medium"> Hi, I'm deepSeek.</p>
             </div>
             <p className="text-sm mt-2">How Can I help you tiday?</p>
