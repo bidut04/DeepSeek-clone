@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import dataBaseConnection from "@/config/databaseConnection";
 import User from "@/models/userModel";
 import { headers } from "next/headers";
+import jwt from "jsonwebtoken";
 
 export async function POST(req) {
   try {
