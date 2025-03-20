@@ -1,10 +1,10 @@
 import mongoose from "mongoose";
-import jwt from "jsonwebtoken";
+import jwt from "jsonwebtoken"; // ✅ Import JSON Web Token
 
 // Define User Schema
 const userSchema = new mongoose.Schema(
   {
-    clerkId: { type: String, required: true, unique: true }, // Clerk User ID
+    clerkId: { type: String, required: true, unique: true },
     email: { type: String, required: true, unique: true },
     name: { type: String, required: true },
     role: { type: String, enum: ["user", "admin"], default: "user" },
@@ -13,11 +13,11 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Generate JWT for internal authentication
+// ✅ Generate JWT for internal authentication
 userSchema.methods.generateAuthToken = function () {
   const token = jwt.sign(
     { _id: this._id, role: this.role },
-    process.env.JWT_SECRET,
+    process.env.JWT_SECRET, // Ensure this exists in .env
     { expiresIn: "7d" }
   );
   this.tokens.push({ token });
