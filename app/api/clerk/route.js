@@ -3,26 +3,26 @@ import { NextResponse } from "next/server";
 import dataBaseConnection from "@/config/databaseConnection";
 import User from "@/models/userModel";
 import { headers } from "next/headers";
-import jwt from "jsonwebtoken";
 
 export async function POST(req) {
   try {
     await dataBaseConnection(); // Ensure DB is connected
 
-    // Initialize Webhook instance with a secret key
+    // Check for Signing Secret in Environment Variables
     const signingSecret = process.env.SIGNING_SECRET;
     if (!signingSecret) {
       console.error("❌ SIGNING_SECRET is missing in environment variables.");
       return NextResponse.json({ error: "Internal server error." }, { status: 500 });
     }
+
+    // Initialize Webhook
     const wh = new Webhook(signingSecret);
 
     // Get request headers
-    const headerPayload = headers(); // Call function properly
     const svixHeaders = {
-      "svix-id": headerPayload.get("svix-id"),
-      "svix-timestamp": headerPayload.get("svix-timestamp"),
-      "svix-signature": headerPayload.get("svix-signature"),
+      "svix-id": req.headers.get("svix-id"),
+      "svix-timestamp": req.headers.get("svix-timestamp"),
+      "svix-signature": req.headers.get("svix-signature"),
     };
 
     // Ensure all required headers are present
@@ -31,18 +31,20 @@ export async function POST(req) {
       return NextResponse.json({ error: "Invalid webhook request." }, { status: 400 });
     }
 
-    // Parse request body
+    // Parse Request Body
     const payload = await req.json();
+    const bodyString = JSON.stringify(payload);
 
-    // Verify webhook signature
+    // Verify Webhook Signature
     let event;
     try {
-      event = wh.verify(JSON.stringify(payload), svixHeaders);
+      event = wh.verify(bodyString, svixHeaders);
     } catch (error) {
       console.error("❌ Webhook verification failed:", error.message);
       return NextResponse.json({ error: "Invalid webhook signature." }, { status: 400 });
     }
 
+    // Extract User Data
     const { id, email_addresses = [], first_name = "", last_name = "", role = "user" } = event.data;
     const type = event.type;
 
@@ -50,16 +52,15 @@ export async function POST(req) {
       return NextResponse.json({ message: "Invalid webhook data." }, { status: 400 });
     }
 
-    // Handle different webhook events
+    // Handle Different Webhook Events
     if (type === "user.created") {
-      // Check if user already exists
       const existingUser = await User.findOne({ clerkId: id });
       if (existingUser) {
         console.log(`ℹ️ User with Clerk ID ${id} already exists.`);
         return NextResponse.json({ message: "User already exists." }, { status: 200 });
       }
 
-      // Create new user in DB
+      // Create New User
       const newUser = new User({
         clerkId: id,
         email: email_addresses[0]?.email_address || "",
@@ -72,7 +73,6 @@ export async function POST(req) {
       return NextResponse.json({ message: "User created successfully." }, { status: 201 });
 
     } else if (type === "user.updated") {
-      // Find and update user
       const updatedUser = await User.findOneAndUpdate(
         { clerkId: id },
         {
@@ -91,7 +91,6 @@ export async function POST(req) {
       return NextResponse.json({ message: "User updated successfully." }, { status: 200 });
 
     } else if (type === "user.deleted") {
-      // Delete user from database
       const deletedUser = await User.findOneAndDelete({ clerkId: id });
 
       if (!deletedUser) {

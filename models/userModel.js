@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken"; // ✅ Import JSON Web Token
 // Define User Schema
 const userSchema = new mongoose.Schema(
   {
-    clerkId: { type: String, required: true, unique: true },
+    clerkId: { type: String, required: true, unique: true }, // Clerk User ID
     email: { type: String, required: true, unique: true },
     name: { type: String, required: true },
     role: { type: String, enum: ["user", "admin"], default: "user" },
